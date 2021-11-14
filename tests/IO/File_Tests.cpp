@@ -16,7 +16,7 @@ TEST(IO_File, SimpleReadWrite)
           "test"
         , IO::ShareFlag::None
         , IO::CreateMode::CreateAlways
-        , IO::FileFlags{IO::FileFlag::Temporary} | IO::FileFlag::DeleteOnClose
+        , IO::FileFlag::Temporary | IO::FileFlag::DeleteOnClose
     );
     ASSERT_TRUE(maybeFile.okay()) << maybeFile.message();
     auto file = std::move(maybeFile).value();

@@ -74,7 +74,7 @@ struct Maybe
     constexpr Maybe(const Maybe&) = delete;
     constexpr Maybe(Maybe&&) noexcept(std::is_nothrow_move_constructible_v<T>) = default;
 
-    constexpr Maybe(const OccurredError lastError) noexcept(std::is_nothrow_default_constructible<T>)
+    constexpr Maybe(const OccurredError lastError) noexcept(noexcept(std::is_nothrow_default_constructible<T>))
         : error{lastError} 
     {}
 

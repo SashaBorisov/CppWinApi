@@ -6,11 +6,12 @@
 namespace Utils
 {
 
-template<auto V, typename T = decltype(V)>
+#define UNIQUE_TAG decltype([](){})
+
+template<auto V, typename Tag>
 struct Flag
 {
     using Type = decltype(V);
-    // using Tag = T;
 
     constexpr Flag() noexcept = default;
     constexpr Flag(const Flag&) noexcept = default;
@@ -28,52 +29,23 @@ struct Flag
 
     constexpr Flag operator ~ () const noexcept
     {
+        static_assert(!std::is_same_v<bool, Type>);
         return Flag{~value};
     }
 
     constexpr Flag operator ! () const noexcept
     {
-        return Flag{~value};
-    }
-
-private:
-    constexpr Flag(const Type v): value{v} {}
-    Type value = V;
-};
-
-template<bool V, typename T>
-struct Flag<V, T>
-{
-    using Type = bool;
-    // using Tag = T;
-
-    constexpr Flag() noexcept = default;
-    constexpr Flag(const Flag&) noexcept = default;
-    constexpr Flag& operator = (const Flag&) noexcept = default;
-
-    constexpr bool operator == (const Flag other) const noexcept
-    {
-        return value == other.value;
-    }
-
-    constexpr bool operator != (const Flag other) const noexcept
-    {
-        return value != other.value;
-    }
-
-    constexpr Flag operator ~ () const noexcept
-    {
-        return Flag{!value};
-    }
-
-    constexpr Flag operator ! () const noexcept
-    {
+        static_assert(std::is_same_v<bool, Type>);
         return Flag{!value};
     }
 
 private:
+    template<typename E>
+    friend class Mask;
+
     constexpr Flag(const Type v): value{v} {}
     Type value = V;
 };
+
 
 }

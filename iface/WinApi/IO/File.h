@@ -7,13 +7,15 @@
 #include <filesystem>
 #include <optional>
 #include <WinApi/Handle.h>
-#include <Utils/Flags.h>
+#include <Utils/Mask.h>
 #include <Utils/CountOf.h>
 
 
 namespace WinApi::IO
 {
 
+using Utils::Flag;
+using Utils::Mask;
 using Utils::DiffOf;
 using Utils::CountOf;
 using Utils::OffsetOfBytes;
@@ -31,14 +33,15 @@ enum class DesiredAccess: DWORD
     , GenericReadWrite = GENERIC_READ | GENERIC_WRITE
 };
 
-enum class ShareFlag: DWORD
+struct ShareFlag
 {
-      None   = 0
-    , Delete = FILE_SHARE_DELETE
-    , Read   = FILE_SHARE_READ
-    , Write  = FILE_SHARE_WRITE
+    using Type = DWORD;
+    static constexpr auto None   = Flag<0, ShareFlag>{};
+    static constexpr auto Delete = Flag<FILE_SHARE_DELETE, ShareFlag>{};
+    static constexpr auto Read   = Flag<FILE_SHARE_READ  , ShareFlag>{};
+    static constexpr auto Write  = Flag<FILE_SHARE_WRITE , ShareFlag>{};
 };
-using ShareFlags = Utils::Flags<ShareFlag>;
+using ShareMask = Utils::Mask<ShareFlag>;
 
 enum class CreateMode: DWORD
 {
@@ -49,36 +52,37 @@ enum class CreateMode: DWORD
     , TruncateExisting  = TRUNCATE_EXISTING
 };
 
-enum class FileFlag: DWORD
+struct FileFlag
 {
-      Archive   = FILE_ATTRIBUTE_ARCHIVE
-    , Encripted = FILE_ATTRIBUTE_ENCRYPTED
-    , Hidden    = FILE_ATTRIBUTE_HIDDEN
-    , Normal    = FILE_ATTRIBUTE_NORMAL
-    , Offline   = FILE_ATTRIBUTE_OFFLINE
-    , ReadOnly  = FILE_ATTRIBUTE_READONLY
-    , System    = FILE_ATTRIBUTE_SYSTEM
-    , Temporary = FILE_ATTRIBUTE_TEMPORARY
+    using Type = DWORD;
+    static constexpr auto Archive   = Flag<FILE_ATTRIBUTE_ARCHIVE  , FileFlag>{};
+    static constexpr auto Encripted = Flag<FILE_ATTRIBUTE_ENCRYPTED, FileFlag>{};
+    static constexpr auto Hidden    = Flag<FILE_ATTRIBUTE_HIDDEN   , FileFlag>{};
+    static constexpr auto Normal    = Flag<FILE_ATTRIBUTE_NORMAL   , FileFlag>{};
+    static constexpr auto Offline   = Flag<FILE_ATTRIBUTE_OFFLINE  , FileFlag>{};
+    static constexpr auto ReadOnly  = Flag<FILE_ATTRIBUTE_READONLY , FileFlag>{};
+    static constexpr auto System    = Flag<FILE_ATTRIBUTE_SYSTEM   , FileFlag>{};
+    static constexpr auto Temporary = Flag<FILE_ATTRIBUTE_TEMPORARY, FileFlag>{};
 
-    , BackupSematics    = FILE_FLAG_BACKUP_SEMANTICS
-    , DeleteOnClose     = FILE_FLAG_DELETE_ON_CLOSE
-    , NoBuffering       = FILE_FLAG_NO_BUFFERING
-    , OpenNoRecall      = FILE_FLAG_OPEN_NO_RECALL
-    , OpenReparsePoint  = FILE_FLAG_OPEN_REPARSE_POINT
-    , Overllaped        = FILE_FLAG_OVERLAPPED
-    , PosixSematics     = FILE_FLAG_POSIX_SEMANTICS
-    , RandomAccess      = FILE_FLAG_RANDOM_ACCESS
-    , SessionName       = FILE_FLAG_SESSION_AWARE
-    , SequentalScan     = FILE_FLAG_SEQUENTIAL_SCAN
-    , WriteThrough      = FILE_FLAG_WRITE_THROUGH
+    static constexpr auto BackupSematics    = Flag<FILE_FLAG_BACKUP_SEMANTICS  , FileFlag>{};
+    static constexpr auto DeleteOnClose     = Flag<FILE_FLAG_DELETE_ON_CLOSE   , FileFlag>{};
+    static constexpr auto NoBuffering       = Flag<FILE_FLAG_NO_BUFFERING      , FileFlag>{};
+    static constexpr auto OpenNoRecall      = Flag<FILE_FLAG_OPEN_NO_RECALL    , FileFlag>{};
+    static constexpr auto OpenReparsePoint  = Flag<FILE_FLAG_OPEN_REPARSE_POINT, FileFlag>{};
+    static constexpr auto Overllaped        = Flag<FILE_FLAG_OVERLAPPED        , FileFlag>{};
+    static constexpr auto PosixSematics     = Flag<FILE_FLAG_POSIX_SEMANTICS   , FileFlag>{};
+    static constexpr auto RandomAccess      = Flag<FILE_FLAG_RANDOM_ACCESS     , FileFlag>{};
+    static constexpr auto SessionName       = Flag<FILE_FLAG_SESSION_AWARE     , FileFlag>{};
+    static constexpr auto SequentalScan     = Flag<FILE_FLAG_SEQUENTIAL_SCAN   , FileFlag>{}; 
+    static constexpr auto WriteThrough      = Flag<FILE_FLAG_WRITE_THROUGH     , FileFlag>{}; 
 };
-using FileFlags = Utils::Flags<FileFlag>;
+using FileMask = Mask<FileFlag>;
 
 template<DesiredAccess desiredAccess>
 auto createFile(  const std::filesystem::path & path
-                , const ShareFlags shareMode
+                , const ShareMask shareMode
                 , const CreateMode creationDisposition
-                , const FileFlags  flags )
+                , const FileMask   flags )
 {
     const HANDLE handle = ::CreateFileW
     (
@@ -319,7 +323,7 @@ CountOf<I> fileWrite(const F& file, const I * const buffer_begin, const I * cons
 }
 
 template<typename F, typename V>
-requires IsFileAllowWrite<F> && std::is_trivially_copyable_v<I>
+requires IsFileAllowWrite<F> && std::is_trivially_copyable_v<V>
 CountOf<V> fileWriteValue(const F& file, const V& value)
 {
     DWORD written = 0u;

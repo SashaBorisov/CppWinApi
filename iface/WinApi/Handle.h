@@ -21,13 +21,8 @@ Handle<C> safeHandle(const HANDLE asset, C&& close) noexcept
     return Handle<C>(asset, std::move(close));
 }
 
-
-constexpr auto Alertable = []() noexcept
-{
-    struct Tag{};
-    return Utils::Flag<true, Tag>{};
-}();
-using AlertableFlag = decltype(Alertable);
+using AlertableFlag = Utils::Flag<true, UNIQUE_TAG>;
+constexpr auto Alertable = AlertableFlag{};
 
 enum class WaitStatus: DWORD
 {
@@ -40,7 +35,7 @@ enum class WaitStatus: DWORD
 template<typename C>
 Maybe<WaitStatus> waitFor(    const Handle<C>& handle
                             , const Milliseconds timeout = Infinite
-                            , const AlertableFlag alertable = !Alertable         )
+                            , const AlertableFlag alertable = !Alertable  )
 {
     const DWORD status = ::WaitForSingleObjectEx
     (

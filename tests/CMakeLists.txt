@@ -14,11 +14,12 @@ FetchContent_Declare(
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
-enable_testing()
+# enable_testing()
 
 
 add_executable(CppWinApi_Tests 
 ./Utils/CountOf_Tests.cpp
+./Utils/Mask_Tests.cpp
 ./IO/File_Tests.cpp
 ./Sync/Event_Tests.cpp
 ./Heap_Tests.cpp

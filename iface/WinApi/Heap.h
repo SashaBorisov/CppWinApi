@@ -39,13 +39,13 @@ concept IsValidHeapFlags = Flags == (Flags & (    HeapFlags::EnableExecute
                                                 | HeapFlags::NoSerialize));
 
 template<DWORD F, typename U, typename C>
-struct Heap: public Handle<C>
+struct Heap //: public Handle<C>
 {
-    using Base = typename Handle<C>;
+    // using Base = typename Handle<C>;
     static constexpr DWORD Flags = F;
     using Type = U;
 
-    using Base::Base;
+    Handle<C> handle;
 };
 
 template<DWORD Flags, typename T = std::byte>
@@ -75,7 +75,7 @@ auto createHeap(  const CountOf<T> initialCount = CountOf<T>{}
     {
         return Maybe<ResultHeap>{OccurredError{}};
     }
-    return Maybe<ResultHeap>{ResultHeap{handle, std::move(destroy)}};
+    return Maybe<ResultHeap>{ResultHeap{{handle, std::move(destroy)}}};
 }
 
 template<DWORD Flags, typename T>
@@ -83,22 +83,22 @@ using MaybeHeap = decltype(createHeap<Flags, T>());
 template<DWORD Flags, typename T>
 using HeapTag = typename MaybeHeap<Flags, T>::Type::deleter_type;
 
-template<DWORD Flags, typename T, typename ...A>
+template<DWORD Flags, typename T, typename C, typename ...A>
 requires IsValidHeapFlags<Flags>
-auto heapEmplace(const Heap<Flags, T, HeapTag<Flags, T>>& heap, A&&... args)
+auto heapEmplace(const Heap<Flags, T, C>& heap, A&&... args)
 {
     const auto size = Utils::sizeOf<T>();
-    auto destructor = [heap = heap.get()](T* const instance)
+    auto destructor = [heap = heap.handle.get()](T* const instance)
     {
         instance->~T();
         ::HeapFree(heap, 0, instance);
     };
     using Instance = std::unique_ptr<T, decltype(destructor)>;
-    const auto pointer = ::HeapAlloc(heap.get(), 0, static_cast<size_t>(size));
+    const auto pointer = ::HeapAlloc(heap.handle.get(), 0, static_cast<size_t>(size));
 
     if constexpr(Flags & HeapFlags::GenerateExceptions)
     {
-        auto holder = makeHandle(pointer, [heap = heap.get()](void* const pointer)
+        auto holder = makeHandle(pointer, [heap = heap.handle.get()](void* const pointer)
         {
             ::HeapFree(heap, pointer);
         });
@@ -112,7 +112,7 @@ auto heapEmplace(const Heap<Flags, T, HeapTag<Flags, T>>& heap, A&&... args)
         {
             return Maybe<Instance>{OccurredError{}};
         }
-        auto holder = safeHandle(pointer, [heap = heap.get()](void* const pointer)
+        auto holder = safeHandle(pointer, [heap = heap.handle.get()](void* const pointer)
         {
             ::HeapFree(heap, 0, pointer);
         });

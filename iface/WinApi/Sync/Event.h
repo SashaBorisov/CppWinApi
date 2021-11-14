@@ -5,6 +5,7 @@
 
 #include <WinApi/Common.h>
 #include <WinApi/Handle.h>
+#include <Utils/Flag.h>
 #include <synchapi.h>
 
 
@@ -21,25 +22,19 @@ constexpr EventReset operator ! (const EventReset mode) noexcept
     return mode == EventReset::Manual ? EventReset::Auto : EventReset::Manual;
 }
 
-enum class EventState: BOOL
-{
-         Signaled = TRUE
-    , NotSignaled = FALSE
-};
-constexpr EventState operator ! (const EventState state) noexcept
-{
-    return state == EventState::Signaled ? EventState::NotSignaled : EventState::Signaled;
-}
+using EventState = Utils::Flag<true, UNIQUE_TAG>;
+static constexpr auto EventSignaled = EventState{};
+
 
 template<EventReset Mode>
-auto createEvent(  const EventState initial = EventState::NotSignaled
+auto createEvent(  const EventState initial = !EventSignaled
                  , const StringView& name = {}  )
 {
     const HANDLE handle = ::CreateEvent
     (
           nullptr
         , Mode == EventReset::Manual
-        , initial == EventState::Signaled
+        , initial == EventSignaled ? TRUE : FALSE
         , name.data()
     );
     auto event = safeHandle(handle, [](const HANDLE handle)
@@ -59,7 +54,7 @@ auto createEvent(  const EventState initial = EventState::NotSignaled
 }
 
 template<EventReset mode>
-using MaybeEvent = decltype(createEvent<mode>(EventState::Signaled, StringView{}));
+using MaybeEvent = decltype(createEvent<mode>(EventSignaled, StringView{}));
 
 template<EventReset mode>
 using Event = typename MaybeEvent<mode>::Type;
@@ -71,13 +66,13 @@ template<typename E>
 concept IsItEvent =    std::is_same_v<E, ManualEvent> 
                     || std::is_same_v<E, AutoEvent>;
 
-static Maybe<ManualEvent> createManualEvent(  const EventState initial = !EventState::Signaled
+static Maybe<ManualEvent> createManualEvent(  const EventState initial = !EventSignaled
                                             , const StringView& name = {})
 {
     return createEvent<EventReset::Manual>(initial, name);
 }
 
-static Maybe<AutoEvent> createAutoEvent(  const EventState initial = !EventState::Signaled
+static Maybe<AutoEvent> createAutoEvent(  const EventState initial = !EventSignaled
                                         , const StringView& name = {})
 {
     return createEvent<EventReset::Auto>(initial, name);

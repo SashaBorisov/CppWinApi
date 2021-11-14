@@ -1,3 +1,6 @@
+//
+//  Copyright © 2021, Alexander Borisov,  https://github.com/SashaBorisov/CppWinApi
+//
 #include <gtest/gtest.h>
 
 #include <Utils/CountOf.h>

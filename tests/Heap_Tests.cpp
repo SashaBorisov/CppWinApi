@@ -11,10 +11,10 @@ using namespace WinApi;
 
 TEST(Heap, Create)
 {
-    auto maybeHeap = createHeap<HeapFlags::NoSerialize>();
+    auto maybeHeap = createHeap<HeapFlags::NoSerialize, int>();
     ASSERT_TRUE(maybeHeap.okay()) << maybeHeap.message();
     auto heap = std::move(maybeHeap).value();
 
-    auto instance = heapEmplace(heap);
+    // auto instance = heapEmplace(heap, 137);
 
 }
